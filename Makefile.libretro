@@ -303,6 +303,44 @@ else ifeq ($(platform), wii)
 	LIBS += -lstdc++ -lpthread
 
 # ARM
+else ifneq (,$(findstring armv6,$(platform)))
+	armplatform := 1
+	TARGETLIB := $(TARGET_NAME)_libretro.so
+	TARGETOS=linux
+	fpic := -fPIC
+	SHARED := -shared -Wl,--version-script=src/osd/retro/link.T -Wl,--no-undefined
+	CCOMFLAGS += $(fpic) -mstructure-size-boundary=32 -falign-functions=16 -fsigned-char -finline -fno-common -fno-builtin -fweb -frename-registers -falign-functions=16
+	PLATCFLAGS += -march=armv6 -DALIGN_INTS -DALIGN_SHORTS -DLSB_FIRST -fstrict-aliasing -fno-merge-constants -DSDLMAME_NO64BITIO -DUSE_ARM_HACK -DRETRO_SETJMP_HACK
+	LDFLAGS += -Wl, -Wl,--no-as-needed $(fpic) $(SHARED)
+	NATIVELD = g++
+	NATIVELDFLAGS = -Wl,--warn-common -lstdc++ -Wl,--no-undefined
+	NATIVECC = g++
+	NATIVECFLAGS = -std=gnu99
+	CC_AS = gcc
+	CC = g++
+	AR = @ar
+	LD = g++
+	CCOMFLAGS += $(PLATCFLAGS) -ffast-math
+
+	PLATCFLAGS += -marm
+	ifneq (,$(findstring neon,$(platform)))
+		PLATCFLAGS += -mfpu=neon
+		HAVE_NEON = 1
+	endif
+	ifneq (,$(findstring softfloat,$(platform)))
+		PLATCFLAGS += -mfloat-abi=softfp
+	else ifneq (,$(findstring hardfloat,$(platform)))
+		PLATCFLAGS += -mfloat-abi=hard
+	endif
+	ifeq ($(VRENDER),opengl)
+		PLATCFLAGS += -DHAVE_GL
+		LIBS += -lGLESv2
+		GLES = 1
+	endif
+
+	PLATCFLAGS += -DARM
+	LIBS += -lstdc++ -lpthread -ldl
+# ARM
 else ifneq (,$(findstring armv,$(platform)))
 	armplatform := 1
 	TARGETLIB := $(TARGET_NAME)_libretro.so
